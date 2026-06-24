@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Login | SecureAccess IAM{% endblock %}
+
+{% block content %}
+<h2>Sign in</h2>
+
+<p class="muted">
+    Access your SecureAccess IAM dashboard.
+</p>
+
+{% if error %}
+<div class="message error">
+    {{ error }}
+</div>
+{% endif %}
+
+<form method="POST" action="{{ url_for('login') }}">
+    <label for="username">Username</label>
+    <input
+        type="text"
+        id="username"
+        name="username"
+        autocomplete="username"
+        required
+    >
+
+    <label for="password">Password</label>
+    <input
+        type="password"
+        id="password"
+        name="password"
+        autocomplete="current-password"
+        required
+    >
+
+    <button type="submit">Sign in</button>
+</form>
+
+<p class="muted auth-switch">
+    New here?
+    <a href="{{ url_for('register') }}">Create an account</a>
+</p>
+
+<style>
+    .auth-switch {
+        margin-top: 18px;
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}

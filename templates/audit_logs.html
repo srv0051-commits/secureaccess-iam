@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Logs | SecureAccess IAM{% endblock %}
+
+{% block content %}
+<h2>Audit Logs</h2>
+
+<p class="muted">
+    Review authentication events, account changes, and security activity.
+</p>
+
+{% if logs %}
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Action</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.id }}</td>
+                <td>{{ log.username or "System" }}</td>
+                <td>
+                    <span class="log-action">
+                        {{ log.action.replace("_", " ").title() }}
+                    </span>
+                </td>
+                <td>{{ log.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p>No audit logs found.</p>
+{% endif %}
+
+<style>
+    .log-action {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: var(--primary);
+        border: 1px solid #bfdbfe;
+        font-size: 13px;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}

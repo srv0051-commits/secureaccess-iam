@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account | SecureAccess IAM{% endblock %}
+
+{% block content %}
+<h2>Create account</h2>
+
+<p class="muted">
+    New accounts are created with the Employee role.
+</p>
+
+{% if error %}
+<div class="message error">
+    {{ error }}
+</div>
+{% endif %}
+
+<form method="POST" action="{{ url_for('register') }}">
+    <label for="username">Username</label>
+    <input
+        type="text"
+        id="username"
+        name="username"
+        autocomplete="username"
+        required
+    >
+
+    <label for="password">Password</label>
+    <input
+        type="password"
+        id="password"
+        name="password"
+        autocomplete="new-password"
+        required
+    >
+
+    <label for="confirm_password">Confirm password</label>
+    <input
+        type="password"
+        id="confirm_password"
+        name="confirm_password"
+        autocomplete="new-password"
+        required
+    >
+
+    <button type="submit">Create account</button>
+</form>
+
+<p class="muted auth-switch">
+    Already have an account?
+    <a href="{{ url_for('login') }}">Sign in</a>
+</p>
+
+<style>
+    .auth-switch {
+        margin-top: 18px;
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}

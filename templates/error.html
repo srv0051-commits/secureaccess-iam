@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Error | SecureAccess IAM{% endblock %}
+
+{% block content %}
+<h2>Error</h2>
+
+<div class="message error">
+    {{ message or "Something went wrong." }}
+</div>
+
+<a class="button secondary" href="{{ url_for('login') }}">Go back</a>
+{% endblock %}

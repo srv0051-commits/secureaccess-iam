@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | SecureAccess IAM{% endblock %}
+
+{% block content %}
+<h2>Dashboard</h2>
+
+<p class="muted">
+    Welcome, {{ username }}. Manage identity access, users, and audit activity.
+</p>
+{% if image %}
+<img
+src="{{ url_for('static',filename='images/' + image) }}"
+style="
+max-width:500px;
+border-radius:15px;
+margin-bottom:20px;
+">
+{% endif %}
+
+<div class="dashboard-grid">
+    <a class="dashboard-card" href="{{ url_for('users') }}">
+        <strong>User Management</strong>
+        <span>Create users, view roles, and check locked accounts.</span>
+    </a>
+
+    <a class="dashboard-card" href="{{ url_for('audit_logs') }}">
+        <strong>Audit Logs</strong>
+        <span>Review login attempts, account events, and security activity.</span>
+    </a>
+
+    <a class="dashboard-card" href="{{ url_for('logout') }}">
+        <strong>Logout</strong>
+        <span>End your current SecureAccess IAM session.</span>
+    </a>
+</div>
+<hr>
+
+<h3>Inbox</h3>
+
+{% for message in messages %}
+<div class="message success">
+<b>{{message.sender}}</b><br>
+{{message.message}}
+</div>
+{% endfor %}
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+    }
+
+    .dashboard-card {
+        display: block;
+        min-height: 130px;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-soft);
+        color: var(--text);
+        text-decoration: none;
+    }
+
+    .dashboard-card:hover {
+        border-color: var(--primary);
+        text-decoration: none;
+    }
+
+    .dashboard-card strong {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 16px;
+    }
+
+    .dashboard-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 14px;
+    }
+
+    @media (max-width: 800px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

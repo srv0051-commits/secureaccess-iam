@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Users | SecureAccess IAM{% endblock %}
+
+{% block content %}
+<h2>User Management</h2>
+
+<p class="muted">
+    Create users, assign roles, and monitor account lock status.
+</p>
+
+{% if message %}
+<div class="message success">
+    {{ message }}
+</div>
+{% endif %}
+
+{% if error %}
+<div class="message error">
+    {{ error }}
+</div>
+{% endif %}
+
+<h3>Create New User</h3>
+
+<form method="POST" action="{{ url_for('users') }}">
+    <label for="username">Username</label>
+    <input
+        type="text"
+        id="username"
+        name="username"
+        autocomplete="username"
+        required
+    >
+
+    <label for="password">Password</label>
+    <input
+        type="password"
+        id="password"
+        name="password"
+        autocomplete="new-password"
+        required
+    >
+
+    <label for="role_id">Role</label>
+    <select id="role_id" name="role_id" required>
+        {% for role in roles %}
+        <option value="{{ role.id }}">{{ role.role_name }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Create User</button>
+</form>
+
+<hr>
+
+<h3>Existing Users</h3>
+
+{% if users %}
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Failed Attempts</th>
+                <th>Locked</th>
+		<th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+    <td>{{ user.id }}</td>
+    <td>{{ user.username }}</td>
+    <td>{{ user.role_name or "No role" }}</td>
+    <td>{{ user.failed_attempts }}</td>
+
+    <td>
+        {% if user.locked %}
+            <span class="status danger">Locked</span>
+        {% else %}
+            <span class="status success-text">Active</span>
+        {% endif %}
+    </td>
+
+    <td>
+
+{% if session["username"] != user.username %}
+
+    {% if current_role == "Admin" %}
+
+        <a class="button"
+           style="background:#dc2626"
+           href="{{ url_for('delete_user_route', user_id=user.id) }}"
+           onclick="return confirm('Delete this user?')">
+            Delete
+        </a>
+
+    {% elif current_role == "HR" and user.role_name == "Employee" %}
+
+        <a class="button"
+           style="background:#dc2626"
+           href="{{ url_for('delete_user_route', user_id=user.id) }}"
+           onclick="return confirm('Delete this user?')">
+            Delete
+        </a>
+
+    {% endif %}
+
+{% endif %}
+
+</td>
+
+</tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p>No users found.</p>
+{% endif %}
+
+<style>
+    .status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .status.danger {
+        background: #fef2f2;
+        color: var(--danger);
+        border: 1px solid #fecaca;
+    }
+
+    .status.success-text {
+        background: #ecfdf5;
+        color: var(--success);
+        border: 1px solid #bbf7d0;
+    }
+</style>
+{% endblock %}

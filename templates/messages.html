@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Messages</h2>
+
+<form method="POST">
+
+{% if role=="HR" or role=="Admin" %}
+<select name="receiver">
+{% for employee in employees %}
+<option value="{{employee.username}}">
+{{employee.username}}
+</option>
+{% endfor %}
+</select>
+{% endif %}
+
+<textarea
+name="message"
+rows="5"
+style="width:100%;margin-top:15px"
+required></textarea>
+
+<button type="submit">
+Send
+</button>
+
+</form>
+
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}SecureAccess IAM{% endblock %}
+
+{% block content %}
+<div class="home-hero">
+    <div>
+        <h2>SecureAccess IAM</h2>
+        <p class="muted">
+            Sign in to manage access or create a new employee account.
+        </p>
+    </div>
+
+    <div class="home-actions">
+        <a class="button" href="{{ url_for('login') }}">Login</a>
+        <a class="button secondary" href="{{ url_for('register') }}">Create Account</a>
+    </div>
+</div>
+
+<style>
+    .home-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+    }
+
+    .home-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .home-actions .button {
+        margin-top: 0;
+    }
+
+    @media (max-width: 700px) {
+        .home-hero {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
