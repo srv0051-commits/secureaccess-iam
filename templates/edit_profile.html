@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Edit Profile</h2>
+
+<form method="POST" enctype="multipart/form-data">
+
+<label>Profile Picture</label>
+
+<input type="file" name="profile_pic">
+
+<label>Bio</label>
+
+<textarea
+name="bio"
+rows="4"></textarea>
+
+<button>
+Save
+</button>
+
+</form>
+
+{% endblock %}

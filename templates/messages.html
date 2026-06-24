@@ -2,30 +2,224 @@
 
 {% block content %}
 
-<h2>Messages</h2>
+<div class="chat-container">
 
-<form method="POST">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
 
-{% if role=="HR" or role=="Admin" %}
-<select name="receiver">
-{% for employee in employees %}
-<option value="{{employee.username}}">
-{{employee.username}}
-</option>
-{% endfor %}
-</select>
+        <h3>Chats</h3>
+
+<input
+type="text"
+id="contactSearch"
+placeholder="Search users..."
+class="search-box">
+
+        {% for contact in contacts %}
+           <a class="contact contact-item
+{% if selected_user==contact.username %}
+active
+{% endif %}"href="{{ url_for('messages', user=contact.username) }}">
+
+   {% if contact.profile_pic %}
+
+<img
+class="avatar-img"
+src="{{ url_for('static',
+filename='uploads/' + contact.profile_pic) }}">
+
+{% else %}
+
+<div class="avatar">
+    {{ contact.username[0]|upper }}
+</div>
+
 {% endif %}
 
-<textarea
-name="message"
-rows="5"
-style="width:100%;margin-top:15px"
-required></textarea>
+    <div class="contact-info">
 
-<button type="submit">
-Send
-</button>
+    <strong>{{ contact.username }}</strong>
 
-</form>
+    <br>
 
+    <small class="preview">
+        {{ contact.preview }}
+    </small>
+
+</div>
+
+</a>
+        {% endfor %}
+
+    </div>
+
+    <!-- Right Chat Area -->
+    <div class="chat-area">
+
+        {% if selected_user %}
+
+        <h3>{{ selected_user }}</h3>
+
+        <div class="chat-box" id="chatBox">
+
+            {% for msg in messages %}
+            <div class="chat-message">
+                {% if msg.sender == username %}
+                    <div class="message sent">
+                {% else %}
+                    <div class="message received">
+                {% endif %}
+                    {{ msg.message }}
+
+                    {% if msg.media %}
+                        {% set media_ext = msg.media|lower %}
+                        {% if media_ext.endswith('png') or media_ext.endswith('jpg') or media_ext.endswith('jpeg') or media_ext.endswith('gif') %}
+                            <br>
+                            <img src="{{ url_for('static', filename='uploads/' + msg.media) }}" alt="Chat attachment displayed in the conversation message bubble within the secure access interface">
+                        {% elif media_ext.endswith('mp4') or media_ext.endswith('mov') or media_ext.endswith('avi') %}
+                            <br>
+                            <video controls>
+                                <source src="{{ url_for('static', filename='uploads/' + msg.media) }}">
+                            </video>
+                        {% elif media_ext.endswith('pdf') or media_ext.endswith('docx') %}
+                            <br>
+                            <a href="{{ url_for('static', filename='uploads/' + msg.media) }}">
+                                📄 {{ msg.media }}
+                            </a>
+                        {% endif %}
+                    {% endif %}
+
+                    <small>{{ msg.timestamp }}</small>
+                </div>
+            {% endfor %}
+
+        </div>
+
+        <form id="messageForm" method="POST" enctype="multipart/form-data">
+            <input type="file" name="file">
+            <textarea name="message" rows="2" placeholder="Type a message..." required></textarea>
+            <button type="submit">Send</button>
+        </form>
+
+        {% else %}
+
+            <h3>Select a chat</h3>
+
+        {% endif %}
+
+    </div>
+
+</div>
+<script>
+
+document.getElementById("contactSearch").addEventListener("keyup",function(){
+
+    let value=this.value.toLowerCase();
+
+    document.querySelectorAll(".contact-item").forEach(contact=>{
+
+        contact.style.display=
+        contact.innerText.toLowerCase().includes(value)
+        ? ""
+        : "none";
+
+    });
+
+});
+
+</script>
+<script>
+
+const chatBox = document.querySelector("#chatBox");
+
+if(chatBox){
+    let pos = localStorage.getItem("chatScroll");
+
+if(pos){
+    chatBox.scrollTop = pos;
+}else{
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+}
+
+</script>
+<script>
+
+{% if selected_user %}
+
+let currentMessageCount =
+document.querySelectorAll(".message").length;
+
+function loadMessages(){
+
+fetch("/messages_data/{{selected_user}}")
+.then(response => response.json())
+.then(data => {
+
+const box = document.getElementById("chatBox");
+
+if(data.length > currentMessageCount){
+
+    const wasNearBottom =
+    box.scrollHeight - box.scrollTop - box.clientHeight < 100;
+
+    for(
+        let i=currentMessageCount;
+        i<data.length;
+        i++
+    ){
+
+        let msg=data[i];
+
+        let side =
+        msg.sender=="{{username}}"
+        ? "sent"
+        : "received";
+
+        let div=document.createElement("div");
+
+        div.className=`message ${side}`;
+
+        div.innerHTML=`
+            ${msg.message}
+            <br>
+            <small>${msg.timestamp}</small>
+        `;
+
+        box.appendChild(div);
+
+    }
+
+    currentMessageCount=data.length;
+
+    if(wasNearBottom){
+
+        box.scrollTop=box.scrollHeight;
+
+    }
+
+}
+
+});
+
+}
+
+setInterval(loadMessages,2000);
+
+{% endif %}
+
+</script>
+<script>
+
+window.onload = function(){
+
+    const box = document.querySelector(".chat-box");
+
+    if(box){
+        box.scrollTop = box.scrollHeight;
+    }
+
+}
+
+</script>
 {% endblock %}

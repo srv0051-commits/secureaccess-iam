@@ -1,4 +1,5 @@
 import sqlite3
+import bcrypt
 from pathlib import Path
 
 
@@ -73,6 +74,8 @@ def initialize_database():
             );
 
             CREATE TABLE IF NOT EXISTS users (
+                profile_pic TEXT,
+                bio TEXT,
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
@@ -102,13 +105,14 @@ def initialize_database():
                 action TEXT NOT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             );
-	    CREATE TABLE IF NOT EXISTS messages(
-    	    	id INTEGER PRIMARY KEY AUTOINCREMENT,
-    		sender TEXT NOT NULL,
-   		receiver TEXT NOT NULL,
-   	 	message TEXT NOT NULL,
-    		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-	    );
+	        CREATE TABLE IF NOT EXISTS messages(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender TEXT NOT NULL,
+                receiver TEXT NOT NULL,
+                message TEXT,
+                media TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
             """
         )
 
@@ -116,6 +120,42 @@ def initialize_database():
         seed_roles(conn)
         seed_permissions(conn)
         seed_role_permissions(conn)
+        admin = conn.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE username = ?
+            """,
+            ("admin",)
+        ).fetchone()
+
+        if admin is None:
+            admin_role = conn.execute(
+                """
+                SELECT id
+                FROM roles
+                WHERE role_name = 'Admin'
+                """
+            ).fetchone()
+
+            password_hash = bcrypt.hashpw(
+                "Admin@123".encode(),
+                bcrypt.gensalt()
+            ).decode("utf-8")
+
+            conn.execute(
+                """
+                INSERT INTO users
+                (username, password_hash, role_id)
+                VALUES (?, ?, ?)
+                """,
+                (
+                    "admin",
+                    password_hash,
+                    admin_role["id"]
+                )
+            )
+
         conn.commit()
 
 
@@ -125,6 +165,12 @@ def run_migrations(conn):
         "users",
         "created_at",
         "created_at DATETIME",
+    )
+    ensure_column(
+        conn,
+        "messages",
+        "media",
+        "media TEXT"
     )
 
     conn.execute(

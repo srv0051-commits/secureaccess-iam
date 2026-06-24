@@ -1,5 +1,9 @@
 import os
 
+import threading
+
+import webbrowser
+
 from flask import Flask, redirect, render_template, request, session, url_for
 
 from admin import (
@@ -12,33 +16,75 @@ from admin import (
 from auth import authenticate_user, bcrypt, get_user_by_username, user_has_permission
 from database import initialize_database, get_connection
 
-def get_messages(username):
+import os
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = "static/uploads"
+
+ALLOWED_EXTENSIONS = {
+    "png", "jpg", "jpeg", "gif",
+    "pdf", "docx",
+    "mp4", "mov", "avi"
+}
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+def allowed_file(filename):
+    return (
+        "." in filename and
+        filename.rsplit(".",1)[1].lower() in ALLOWED_EXTENSIONS
+    )
+
+def get_messages(user1, user2):
     with get_connection() as conn:
         return conn.execute(
             """
-            SELECT sender,message,timestamp
+            SELECT sender,receiver,message,media,timestamp
             FROM messages
-            WHERE receiver=?
-            ORDER BY timestamp DESC
+            WHERE
+                (sender=? AND receiver=?)
+                OR
+                (sender=? AND receiver=?)
+            ORDER BY timestamp
             """,
-            (username,)
+            (user1, user2, user2, user1)
         ).fetchall()
 
 
-def send_message(sender, receiver, message):
+def get_last_message(user1, user2):
+    with get_connection() as conn:
+        return conn.execute(
+            """
+            SELECT message, media, timestamp
+            FROM messages
+            WHERE
+                (sender=? AND receiver=?)
+                OR
+                (sender=? AND receiver=?)
+            ORDER BY timestamp DESC
+            LIMIT 1
+            """,
+            (user1, user2, user2, user1)
+        ).fetchone()
+
+
+def send_message(sender, receiver, message, media=None):
     with get_connection() as conn:
         conn.execute(
             """
-            INSERT INTO messages(sender,receiver,message)
-            VALUES(?,?,?)
+            INSERT INTO messages(sender,receiver,message,media)
+            VALUES(?,?,?,?)
             """,
-            (sender, receiver, message)
+            (sender, receiver, message, media)
         )
         conn.commit()
 
 
 def create_app():
     app = Flask(__name__)
+
+    app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
     app.config["SECRET_KEY"] = os.environ.get(
         "SECRET_KEY",
@@ -145,9 +191,91 @@ def create_app():
             username=session["username"],
             role=role,
             image=image,
-            messages=get_messages(session["username"])
-        )
+            messages=[]        )
+    @app.route("/profile")
+    def profile():
 
+        if "username" not in session:
+            return redirect(url_for("login"))
+
+        with get_connection() as conn:
+
+            user = conn.execute(
+                """
+                SELECT *
+                FROM users
+                WHERE username=?
+                """,
+                (session["username"],)
+            ).fetchone()
+
+        return render_template(
+            "profile.html",
+            user=user
+        )
+    @app.route("/edit-profile", methods=["GET","POST"])
+    def edit_profile():
+
+        if "username" not in session:
+            return redirect(url_for("login"))
+
+        if request.method=="POST":
+
+            bio=request.form["bio"]
+
+            file=request.files.get("profile_pic")
+
+            filename=None
+
+            if file and file.filename!="":
+
+                filename=secure_filename(file.filename)
+
+                file.save(
+                    os.path.join(
+                        "static/uploads",
+                        filename
+                    )
+                )
+
+                with get_connection() as conn:
+
+                    conn.execute(
+                        """
+                        UPDATE users
+                        SET profile_pic=?, bio=?
+                        WHERE username=?
+                        """,
+                        (
+                            filename,
+                            bio,
+                            session["username"]
+                        )
+                    )
+
+                    conn.commit()
+
+            else:
+
+                with get_connection() as conn:
+
+                    conn.execute(
+                        """
+                        UPDATE users
+                        SET bio=?
+                        WHERE username=?
+                        """,
+                        (
+                            bio,
+                            session["username"]
+                        )
+                    )
+
+                    conn.commit()
+
+            return redirect(url_for("profile"))
+
+        return render_template("edit_profile.html")
     @app.route("/messages", methods=["GET", "POST"])
     def messages():
 
@@ -157,77 +285,87 @@ def create_app():
         sender = session["username"]
         user = get_user_by_username(sender)
         role = user["role_name"]
+        selected_user = request.args.get("user")
 
         if request.method == "POST":
-
             text = request.form["message"]
+            file = request.files.get("file")
 
-            if role == "Employee":
+            filename = None
 
-                with get_connection() as conn:
-                    hr = conn.execute(
-                        """
-                        SELECT username
-                        FROM users
-                        JOIN roles ON users.role_id = roles.id
-                        WHERE role_name='HR'
-                        LIMIT 1
-                        """
-                    ).fetchone()
+            if file and file.filename != "":
+                if allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    file.save(
+                        os.path.join(
+                            app.config["UPLOAD_FOLDER"],
+                            filename
+                        )
+                    )
+                else:
+                    return "Invalid file type."
 
-                if hr is None:
-                    return "No HR account found."
+            receiver = selected_user
 
-                receiver = hr["username"]
+            if not receiver:
+                return "Please select a recipient."
 
-            else:
-                receiver = request.form["receiver"]
+            send_message(sender, receiver, text, filename)
 
-                if not receiver:
-                    return "Please select a recipient."
+        with get_connection() as conn:
 
-            send_message(sender, receiver, text)
+            users = conn.execute(
+                """
+                SELECT username, profile_pic
+                FROM users
+                WHERE username != ?
+                """,
+                (session["username"],)
+            ).fetchall()
 
-        employees = []
+            contacts = []
 
-        if role == "Admin":
-            with get_connection() as conn:
-                employees = conn.execute(
-                    """
-                    SELECT username
-                    FROM users
-                    WHERE username != ?
-                    """,
-                    (session["username"],)
-                ).fetchall()
+            for user_row in users:
+                username = user_row["username"]
 
-        elif role == "HR":
-            with get_connection() as conn:
-                employees = conn.execute(
-                    """
-                    SELECT username
-                    FROM users
-                    WHERE username != ?
-                    """,
-                    (session["username"],)
-                ).fetchall()
+                last_msg = get_last_message(
+                    session["username"],
+                    username
+                )
 
-        elif role == "Finance":
-            with get_connection() as conn:
-                employees = conn.execute(
-                    """
-                    SELECT username
-                    FROM users
-                    WHERE username != ?
-                    """,
-                    (session["username"],)
-                ).fetchall()
+                preview = "No messages yet"
+                timestamp = ""
 
-        return render_template(
-            "messages.html",
-            role=role,
-            employees=employees
-        )
+                if last_msg:
+                    if last_msg["message"]:
+                        preview = last_msg["message"]
+                    elif last_msg["media"]:
+                        preview = "📎 Attachment"
+                    timestamp = last_msg["timestamp"]
+
+                contacts.append({
+                    "username": username,
+                    "profile_pic": user_row["profile_pic"],
+                    "preview": preview[:30],
+                    "timestamp": timestamp
+                })
+            contacts.sort(
+                key=lambda x: x["timestamp"] if x["timestamp"] else "",
+                reverse=True
+            )
+
+            return render_template(
+                "messages.html",
+                role=role,
+                messages=(
+                    get_messages(session["username"], selected_user)
+                    if selected_user
+                    else []
+                ),
+                selected_user=selected_user,
+                contacts=contacts,
+                username=session["username"]
+            )
 
     @app.route("/users", methods=["GET", "POST"])
     def users():
@@ -322,6 +460,25 @@ def create_app():
     @app.errorhandler(500)
     def internal_error(error):
         return render_template("error.html", message="Internal server error."), 500
+    @app.route("/messages_data/<user>")
+    def messages_data(user):
+
+        if "username" not in session:
+            return []
+
+        msgs = get_messages(session["username"], user)
+
+        result = []
+
+        for msg in msgs:
+            result.append({
+                "sender": msg["sender"],
+                "message": msg["message"],
+                "media": msg["media"],
+                "timestamp": msg["timestamp"]
+            })
+
+        return result
 
     return app
 
@@ -330,8 +487,13 @@ app = create_app()
 
 
 if __name__ == "__main__":
+
+    threading.Timer(
+        1.5,
+        lambda: webbrowser.open("http://127.0.0.1:5000")
+    ).start()
+
     app.run(
         host="127.0.0.1",
-        port=5000,
-        debug=os.environ.get("FLASK_DEBUG") == "1",
+        port=5000
     )

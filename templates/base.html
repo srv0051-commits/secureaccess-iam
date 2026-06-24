@@ -6,6 +6,203 @@
     <title>{% block title %}SecureAccess IAM{% endblock %}</title>
 
     <style>
+        .chat-container{
+    display:flex;
+    height:75vh;
+}
+
+.sidebar{
+    width:250px;
+    background:#f5f5f5;
+    overflow-y:auto;
+    border-right:1px solid #ddd;
+}
+
+.contact{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:15px;
+    text-decoration:none;
+    color:black;
+    border-bottom:1px solid #ddd;
+    transition:.2s;
+}
+
+.contact:hover{
+    background:#ececec;
+}
+
+.avatar{
+    width:45px;
+    height:45px;
+    border-radius:50%;
+    background:#25d366;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+}
+.search-box{
+    width:90%;
+    margin:10px;
+    padding:10px;
+    border-radius:10px;
+}
+
+.contact:hover{
+    background:#e9e9e9;
+}
+.contact.active{
+    background:#dbeafe;
+    border-left:4px solid #2563eb;
+}
+
+.dark .contact.active{
+    background:#374151;
+}
+
+.contact.active strong{
+    color:#2563eb;
+}
+
+.chat-area{
+    flex:1;
+    padding:20px;
+}
+
+.chat-box{
+    height:60vh;
+    overflow-y:auto;
+}
+.contact-info{
+    overflow:hidden;
+}
+
+.preview{
+    color:gray;
+    display:block;
+    width:150px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.avatar-img{
+    width:45px;
+    height:45px;
+    border-radius:50%;
+    object-fit:cover;
+}
+@media(max-width:768px){
+
+.chat-container{
+    flex-direction:column;
+}
+
+.sidebar{
+    width:100%;
+    max-height:200px;
+}
+
+.chat-box{
+    height:50vh;
+}
+.contact.active{
+    background:#dcf8c6;
+}
+}
+
+        *{
+            max-width:100%;
+        }
+        img{
+            max-width:100%;
+            height:auto;
+            border-radius:10px;
+        }
+        .chat-box {
+            width: 90%;
+            height: 450px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: auto;
+            box-shadow: 0 0 15px rgba(0, 0, 0, .15);
+        }
+
+        .sent{
+            margin-left:auto;
+            background:#dcf8c6;
+        }
+
+        .received{
+            background:white;
+        }
+
+        .message {
+            background: #dcf8c6;
+            padding: 10px;
+            border-radius: 12px;
+            width: fit-content;
+            max-width:80%;
+            word-wrap:break-word;
+            margin-bottom: 10px;
+        }
+        .message img,
+        .message video{
+            max-width:100%;
+            height:auto;
+            border-radius:10px;
+        }
+
+        textarea {
+            width: 90%;
+            max-width: 700px;
+            box-sizing:border-box;
+            height: 60px;
+            margin-top: 15px;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            border: none;
+            background: #25d366;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+         video{
+            max-width:100%;
+            height:auto;
+            border-radius:10px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links{
+                flex-direction:column;
+                width:100%;
+                align-items:flex-start;
+            }
+            textarea {
+                width: 85%;
+                height: 50px;
+                padding: 8px;
+                font-size: 16px;
+            }
+
+            button {
+                width:100%;
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+           
+        }
+        
         :root {
             --bg: #f3f4f6;
             --surface: #ffffff;
@@ -66,6 +263,7 @@
         }
 
         .nav-links {
+            row-gap:8px;
             display: flex;
             align-items: center;
             gap: 14px;
@@ -94,9 +292,11 @@
 
         .panel {
             background: var(--surface);
+            box-shadow:0 5px 15px rgba(0,0,0,.1);
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 28px;
+            overflow-x:auto;
         }
 
         h1,
@@ -149,6 +349,7 @@
         button,
         .button {
             display: inline-flex;
+            max-width:100%;
             align-items: center;
             justify-content: center;
             min-height: 42px;
@@ -233,7 +434,83 @@
             color: var(--muted);
         }
 
+        .menu-toggle {
+            display: none;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+        }
+        
+
         @media (max-width: 700px) {
+            .menu-toggle {
+                display: block;
+            }
+
+            .nav-links {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+                margin-top: 10px;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+        }
+        .topbar{
+            position:sticky;
+            top:0;
+            z-index:1000;
+            }
+        button,
+        a,
+        .panel,
+        .message{
+            transition:.2s;
+        }
+        .dark{
+            --bg:#111827;
+            --surface:#1f2937;
+            --text:#f9fafb;
+            --border:#374151;
+            --nav:#000;
+        }
+        .sent{
+            margin-left:auto;
+            background:#dcf8c6;
+        }
+
+        .received{
+            background:white;
+        }
+
+        @media (max-width: 700px) {
+            .chat-box {
+                width: 100%;
+                height: 60vh;
+                padding: 10px;
+            }
+
+            .message {
+                max-width: 90%;
+                font-size: 14px;
+            }
+
+            textarea {
+                font-size: 16px;
+            }
+
+            select {
+                width: 100%;
+            }
+
+            img {
+                max-width: 100%;
+            }
+
             .topbar {
                 padding: 0 16px;
             }
@@ -265,16 +542,35 @@
     </style>
 </head>
 <body>
+<script>
+function toggleMenu(){
+    document.getElementById("navMenu").classList.toggle("active");
+}
+</script>
+
+<script>
+function toggleDarkMode(){
+document.body.classList.toggle("dark");
+}
+</script>
     <header class="topbar">
         <div class="topbar-inner">
             <a class="brand" href="{{ url_for('home') }}">SecureAccess IAM</a>
 
-            <nav class="nav-links">
+            <div class="menu-toggle" onclick="toggleMenu()">
+                ☰
+            </div>
+
+            <nav class="nav-links" id="navMenu">
+                    <button onclick="toggleDarkMode()">🌙</button>
                 {% if session.get("username") %}
                     <a href="{{ url_for('dashboard') }}">Dashboard</a>
                     <a href="{{ url_for('users') }}">Users</a>
-		    <a href="{{ url_for('messages') }}">Messages</a>
+                    <a href="{{ url_for('messages') }}">Messages</a>
                     <a href="{{ url_for('audit_logs') }}">Audit Logs</a>
+                    <a href="{{ url_for('profile') }}">
+                        Profile
+                    </a>
                     <a href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
                     <a href="{{ url_for('login') }}">Login</a>
